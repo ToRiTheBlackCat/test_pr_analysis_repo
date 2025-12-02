@@ -14,6 +14,8 @@ namespace ASCIIImageConvertorMain
 	public partial class MainWindow : Window
 	{
 		private BitmapImage? myImg;
+        private readonly string fakeKey = "SAMPLE FAKE KEY FOR AI DETECTING";
+        private readonly string fakeBugNumber = 123;
 
 		public MainWindow()
 		{
