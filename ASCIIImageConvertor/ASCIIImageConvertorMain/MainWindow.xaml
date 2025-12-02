@@ -14,9 +14,9 @@
             <!-- For the WebBrowser -->
         </Grid.RowDefinitions>
 
-        <Button x:Name="browseButton" Content="Browse" HorizontalAlignment="Left" Margin="414,54,0,0" VerticalAlignment="Top" Click="browseButton_Click" Height="27" Width="90" Background="#FF72F7B7" Foreground="White"/>
-        <TextBox x:Name="urlTextBox" HorizontalAlignment="Left" Margin="26,54,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="347" Height="23"/>
-        <Image x:Name="image" HorizontalAlignment="Left" Height="318" Margin="26,294,0,0" VerticalAlignment="Top" Width="445" Grid.RowSpan="2">
+        <Button x:Name="browseButton" Content="Browse" HorizontalAlignment="Left" Margin="414,22,0,0" VerticalAlignment="Top" Click="browseButton_Click" Height="27" Width="90" Background="#FF72F7B7" Foreground="White"/>
+        <TextBox x:Name="urlTextBox" HorizontalAlignment="Left" Margin="26,22,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="347" Height="23"/>
+        <Image x:Name="image" HorizontalAlignment="Left" Height="318" Margin="26,294,0,0" VerticalAlignment="Top" Width="285" Grid.RowSpan="2">
             <Image.OpacityMask>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="Black"/>
@@ -26,7 +26,7 @@
 
         </Image>
         <Button x:Name="convertButton" Content="Convert" HorizontalAlignment="Left" Margin="112,175,0,0" VerticalAlignment="Top" Click="convertButton_Click" Height="64" Width="174" Background="#FFEA9C78" Foreground="White" FontSize="18" FontWeight="Bold"/>
-        <WebBrowser x:Name="asciiArtWebBrowser" Margin="508,294,57,0" Height="330" VerticalAlignment="Top" Grid.RowSpan="2"/>
+        <WebBrowser x:Name="asciiArtWebBrowser" Margin="343,90,10,0" Height="570" VerticalAlignment="Top" Grid.RowSpan="2"/>
         <!-- Adjust dimensions as needed -->
     </Grid>
 </Window>
