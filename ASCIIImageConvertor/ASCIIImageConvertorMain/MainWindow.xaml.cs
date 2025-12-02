@@ -44,82 +44,125 @@ namespace ASCIIImageConvertorMain
 			}
 		}
 
-		private string ConvertToColoredAscii(Bitmap image, double containerWidth, double containerHeight)
-		{
-			var asciiChars = " .'^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
-			double charAspectRatio = 0.5; // Adjust for the font
-			double fontSize = Math.Min(containerWidth / image.Width, containerHeight / (image.Height * charAspectRatio)) * 1.2;
+        private string ConvertToColoredAscii(Bitmap image, double containerWidth, double containerHeight)
+        {
+            StringBuilder asciiArt = new StringBuilder();
 
-			StringBuilder asciiArt = new StringBuilder();
-			asciiArt.Append($"<div style='display:flex; justify-content:center; align-items:center; width:100%; height:100%; overflow:auto; background-color:black;'>");
-			asciiArt.Append($"<pre style='margin:0; font-size:{fontSize}px; line-height:{fontSize * charAspectRatio}px; color:white; text-align:center;'>");
+            // HTML Setup with optimized CSS for performance
+            asciiArt.Append("<!DOCTYPE html><html><head><meta http-equiv='X-UA-Compatible' content='IE=edge'>");
+            asciiArt.Append("<style>");
+            asciiArt.Append("body { background-color: #1a1a1a; margin: 0; overflow: hidden; }"); // Dark Grey background looks better than pure black
+                                                                                                 // We use 'Courier New' because it renders blocks (█) better than Consolas in some browsers
+            asciiArt.Append("pre { font-family: 'Courier New', monospace; font-weight: bold; white-space: pre; margin: 0; padding: 0; }");
+            asciiArt.Append("</style></head><body>");
 
+            // Container to center the image
+            asciiArt.Append("<div style='display:flex; justify-content:center; align-items:center; width:100%; height:100%;'>");
 
-			var rect = new Rectangle(0, 0, image.Width, image.Height);
-			var imageData = image.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            // FONT CALCULATION:
+            // We assume a character aspect ratio of roughly 0.6
+            double fontSize = Math.Max(containerWidth / image.Width, 2);
+            double lineHeight = fontSize; // 1:1 ratio for Block characters
 
-			unsafe
-			{
-				byte* imagePtr = (byte*)imageData.Scan0;
+            asciiArt.Append($"<pre style='font-size:{fontSize}px; line-height:{lineHeight}px;'>");
 
-				for (int y = 0; y < image.Height; y += 3)
-				{
-					for (int x = 0; x < image.Width; x += 3)
-					{
-						byte* pixel = imagePtr + (y * imageData.Stride) + (x * 4);
-						int brightness = (int)(pixel[2] * 0.3 + pixel[1] * 0.59 + pixel[0] * 0.11);
-						int index = brightness * (asciiChars.Length - 1) / 255;
-						string asciiChar = asciiChars[index].ToString();
+            var rect = new Rectangle(0, 0, image.Width, image.Height);
+            var imageData = image.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-						asciiArt.Append($"<span style='color:rgb({pixel[2]},{pixel[1]},{pixel[0]})'>{asciiChar}</span>");
-					}
-					asciiArt.AppendLine();
-				}
-			}
+            unsafe
+            {
+                byte* imagePtr = (byte*)imageData.Scan0;
 
-			image.UnlockBits(imageData);
-			asciiArt.Append("</pre></div>");
-			return asciiArt.ToString();
-		}
-		private Bitmap ResizeImage(Bitmap original, double maxWidth, double maxHeight)
-		{
-			float aspectRatio = (float)original.Width / original.Height;
+                // GAMMA CORRECTION FACTOR
+                // Lower = Darker, Higher = Brighter shadows. 
+                // 1.5 - 2.0 is the sweet spot for seeing details in dark screenshots.
+                double gamma = 1.8;
 
-			int newWidth = (int)Math.Min(maxWidth * 1.5, maxHeight * aspectRatio * 1.5);
-			int newHeight = (int)(newWidth / aspectRatio);
+                for (int y = 0; y < image.Height; y++)
+                {
+                    for (int x = 0; x < image.Width; x++)
+                    {
+                        byte* pixel = imagePtr + (y * imageData.Stride) + (x * 4);
 
-			if (newHeight > maxHeight)
-			{
-				newHeight = (int)maxHeight;
-				newWidth = (int)(newHeight * aspectRatio);
-			}
+                        double r = pixel[2];
+                        double g = pixel[1];
+                        double b = pixel[0];
 
-			return new Bitmap(original, new System.Drawing.Size(newWidth, newHeight));
-		}
-		private void convertButton_Click(object sender, RoutedEventArgs e)
-		{
-			if (myImg == null) return;
+                        // --- MAGIC FIX 1: GAMMA CORRECTION ---
+                        // This makes dark colors (like your terminal text) "pop" out of the black background
+                        r = 255 * Math.Pow(r / 255.0, 1 / gamma);
+                        g = 255 * Math.Pow(g / 255.0, 1 / gamma);
+                        b = 255 * Math.Pow(b / 255.0, 1 / gamma);
 
-			using (MemoryStream ms = new MemoryStream())
-			{
-				BitmapEncoder encoder = new BmpBitmapEncoder();
-				encoder.Frames.Add(BitmapFrame.Create(myImg));
-				encoder.Save(ms);
+                        // --- MAGIC FIX 2: PIXEL ART MODE ---
+                        // Instead of using confusing characters like @%#, we use a solid block '█'.
+                        // This preserves the EXACT shape of your windows and text.
+                        char asciiChar = '█';
 
-				var bitmapImage = new Bitmap(ms);
+                        // We output the corrected color
+                        asciiArt.Append($"<span style='color:rgb({(int)r},{(int)g},{(int)b})'>{asciiChar}</span>");
+                    }
+                    asciiArt.Append("<br>");
+                }
+            }
 
-				// Resize the image while maintaining the aspect ratio
-				double maxWidth = asciiArtWebBrowser.ActualWidth;
-				double maxHeight = asciiArtWebBrowser.ActualHeight;
+            
 
-				Bitmap resizedBitmap = ResizeImage(bitmapImage, maxWidth, maxHeight);
+            asciiArt.Append($"<pre style='font-size:{fontSize}px; line-height:{lineHeight}px; letter-spacing:0px;'>");
+            return asciiArt.ToString();
+        }
 
-				// Convert to colored ASCII art with better resolution
-				string asciiArt = ConvertToColoredAscii(resizedBitmap, maxWidth, maxHeight);
+        private Bitmap ResizeImage(Bitmap original, int targetWidth)
+        {
+            // FIX: Change 0.6 to 1.0. 
+            // If the image looks too tall afterwards, lower this to 0.8 or 0.9.
+            double aspectRatioCorrection = 1;
 
-				// Display ASCII art in the WebBrowser
-				asciiArtWebBrowser.NavigateToString($"<html><body>{asciiArt}</body></html>");
-			}
-		}
-	}
+            int newHeight = (int)(original.Height * ((double)targetWidth /  original.Width) * aspectRatioCorrection);
+
+            // Safety check
+            if (newHeight < 1) newHeight = 1;
+
+            var resized = new Bitmap(targetWidth, newHeight);
+
+            using (var graphics = Graphics.FromImage(resized))
+            {
+                graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                using (var wrapMode = new System.Drawing.Imaging.ImageAttributes())
+                {
+                    wrapMode.SetWrapMode(System.Drawing.Drawing2D.WrapMode.TileFlipXY);
+                    graphics.DrawImage(original, new Rectangle(0, 0, targetWidth, newHeight), 0, 0, original.Width, original.Height, GraphicsUnit.Pixel, wrapMode);
+                }
+            }
+
+            return resized;
+        }
+
+        private void convertButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (myImg == null) return;
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                BitmapEncoder encoder = new BmpBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(myImg));
+                encoder.Save(ms);
+
+                using (var bitmapImage = new Bitmap(ms))
+                {
+                    // FIX: Don't use Screen Width. Use a fixed "Character Width".
+                    // 150 characters wide is a good quality for ASCII art.
+                    Bitmap resizedBitmap = ResizeImage(bitmapImage, 250);
+
+                    // Pass the container dimensions only for font calculation
+                    string asciiArt = ConvertToColoredAscii(resizedBitmap, asciiArtWebBrowser.ActualWidth, asciiArtWebBrowser.ActualHeight);
+
+                    asciiArtWebBrowser.NavigateToString(asciiArt);
+                }
+            }
+        }
+    }
 }
