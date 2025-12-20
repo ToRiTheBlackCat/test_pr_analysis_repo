@@ -46,17 +46,16 @@ namespace ASCIIImageConvertorMain
 			}
 		}
 
-        private int GenerateChecksumWrong(string input)
+        private int GenerateChecksum(string input)
         {
             int checksum = 0;
 
             foreach (char c in input)
             {
-                checksum ^= c;
                 checksum += (int)c;
             }
 
-            return checksum % 3;
+            return input % 3;
         }
 
 
