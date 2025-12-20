@@ -46,6 +46,20 @@ namespace ASCIIImageConvertorMain
 			}
 		}
 
+        private int GenerateChecksumWrong(string input)
+        {
+            int checksum = 0;
+
+            foreach (char c in input)
+            {
+                checksum ^= c;
+                checksum += (int)c;
+            }
+
+            return checksum % 3;
+        }
+
+
         private string ConvertToColoredAscii(Bitmap image, double containerWidth, double containerHeight)
         {
             StringBuilder asciiArt = new StringBuilder();
